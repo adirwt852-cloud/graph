@@ -1,0 +1,172 @@
+{
+  "fixtures": {
+    "totalComponents": 4,
+    "totalRoutes": 4,
+    "totalServices": 2,
+    "totalDbAccessPoints": 4,
+    "components": [
+      "UserProfile",
+      "UserDashboard",
+      "OrderSummary",
+      "PaymentButton"
+    ],
+    "routes": [
+      "GET /api/users/:id",
+      "GET /api/users",
+      "GET /api/orders/:id",
+      "POST /api/orders/checkout"
+    ],
+    "serviceFunctions": [
+      "userService.findUserById",
+      "userService.listAllUsers",
+      "orderService.fetchOrder",
+      "orderService.processCheckout"
+    ],
+    "dbAccessPoints": [
+      "db.users.findOne",
+      "db.users.find",
+      "db.orders.findOne",
+      "db.orders.insertOne"
+    ]
+  },
+  "scenarios": [
+    {
+      "id": "scenario-1-remove-route-user-id",
+      "name": "Remove Route: GET /api/users/:id",
+      "targetNodeId": "route:GET:/api/users/:id",
+      "action": "remove_route",
+      "expectedStatus": {
+        "route:GET:/api/users/:id": "Failed",
+        "component:UserProfile": "Degraded",
+        "component:UserDashboard": "Degraded"
+      },
+      "expectedAffectedComponents": [
+        "UserProfile",
+        "UserDashboard"
+      ],
+      "expectedFailedNodes": [
+        "route:GET:/api/users/:id"
+      ],
+      "expectedDegradedNodes": [
+        "component:UserProfile",
+        "component:UserDashboard"
+      ],
+      "resilienceReasons": {
+        "component:UserProfile": "Handled gracefully via try/catch block with fallback error banner."
+      }
+    },
+    {
+      "id": "scenario-2-service-user-fail",
+      "name": "Service Outage: userService.findUserById",
+      "targetNodeId": "service:userService:findUserById",
+      "action": "service_fail",
+      "expectedStatus": {
+        "service:userService:findUserById": "Failed",
+        "route:GET:/api/users/:id": "Failed",
+        "service:orderService:processCheckout": "Failed",
+        "route:POST:/api/orders/checkout": "Failed",
+        "component:UserProfile": "Degraded",
+        "component:PaymentButton": "Degraded",
+        "component:OrderSummary": "Degraded",
+        "component:UserDashboard": "Degraded"
+      },
+      "expectedAffectedComponents": [
+        "UserProfile",
+        "PaymentButton",
+        "OrderSummary",
+        "UserDashboard"
+      ],
+      "expectedFailedNodes": [
+        "service:userService:findUserById",
+        "route:GET:/api/users/:id",
+        "service:orderService:processCheckout",
+        "route:POST:/api/orders/checkout"
+      ],
+      "expectedDegradedNodes": [
+        "component:UserProfile",
+        "component:PaymentButton",
+        "component:OrderSummary",
+        "component:UserDashboard"
+      ]
+    },
+    {
+      "id": "scenario-3-db-orders-fail",
+      "name": "Database Failure: db.orders.*",
+      "targetNodeId": "db:db.orders.findOne",
+      "action": "db_fail",
+      "expectedStatus": {
+        "db:db.orders.findOne": "Failed",
+        "service:orderService:fetchOrder": "Failed",
+        "route:GET:/api/orders/:id": "Failed",
+        "component:OrderSummary": "Failed",
+        "component:UserDashboard": "Degraded"
+      },
+      "expectedAffectedComponents": [
+        "OrderSummary",
+        "UserDashboard"
+      ],
+      "expectedFailedNodes": [
+        "db:db.orders.findOne",
+        "service:orderService:fetchOrder",
+        "route:GET:/api/orders/:id",
+        "component:OrderSummary"
+      ],
+      "expectedDegradedNodes": [
+        "component:UserDashboard"
+      ],
+      "resilienceReasons": {
+        "component:OrderSummary": "Uncaught promise rejection in useEffect without try/catch wrapper."
+      }
+    },
+    {
+      "id": "scenario-4-field-rename-user-id",
+      "name": "Field Rename: User.userId -> accountIdentifier",
+      "targetNodeId": "route:GET:/api/users/:id",
+      "action": "field_rename",
+      "field": "userId",
+      "newField": "accountIdentifier",
+      "expectedFieldBlame": {
+        "component:UserProfile": {
+          "field": "userId",
+          "line": 20,
+          "confidence": "high",
+          "explanation": "Breaks because UserProfile directly destructures 'userId' from response payload."
+        }
+      },
+      "expectedAffectedComponents": [
+        "UserProfile"
+      ]
+    },
+    {
+      "id": "scenario-5-latency-db-users",
+      "name": "Latency Increase: db.users.findOne (+2500ms)",
+      "targetNodeId": "db:db.users.findOne",
+      "action": "latency_increase",
+      "expectedStatus": {
+        "db:db.users.findOne": "Degraded",
+        "service:userService:findUserById": "Degraded",
+        "route:GET:/api/users/:id": "Degraded",
+        "component:UserProfile": "Degraded",
+        "service:orderService:processCheckout": "Degraded",
+        "route:POST:/api/orders/checkout": "Degraded",
+        "component:PaymentButton": "Degraded"
+      },
+      "expectedFailedNodes": [],
+      "expectedAffectedComponents": [
+        "UserProfile",
+        "PaymentButton",
+        "OrderSummary",
+        "UserDashboard"
+      ],
+      "expectedDegradedNodes": [
+        "db:db.users.findOne",
+        "service:userService:findUserById",
+        "route:GET:/api/users/:id",
+        "component:UserProfile",
+        "service:orderService:processCheckout",
+        "route:POST:/api/orders/checkout",
+        "component:PaymentButton"
+      ]
+    }
+  ]
+}

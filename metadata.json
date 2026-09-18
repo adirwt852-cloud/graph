@@ -1,0 +1,6 @@
+{
+  "name": "GraphFlow - Full-Stack Blast Radius & Dependency Analyzer",
+  "description": "Full-stack dependency graph engine connecting React components to Express routes, services, and databases with runtime traffic verification, what-if blast radius simulation, and field-level change tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

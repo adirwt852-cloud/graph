@@ -1,0 +1,22 @@
+name: 'GraphFlow Blast Radius Analyzer'
+description: 'Full-stack dependency and blast radius analyzer for PRs'
+author: 'GraphFlow Team'
+inputs:
+  github-token:
+    description: 'GitHub token for PR comment posting'
+    required: true
+  confidence-threshold:
+    description: 'Minimum confidence level to trigger alerts (high, medium, low)'
+    default: 'medium'
+    required: false
+  frontend-dir:
+    description: 'Path to frontend directory'
+    default: 'frontend'
+    required: false
+  backend-dir:
+    description: 'Path to backend directory'
+    default: 'backend'
+    required: false
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
